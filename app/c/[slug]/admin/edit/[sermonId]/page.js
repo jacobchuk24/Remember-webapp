@@ -1,4 +1,3 @@
-cat > "app/c/[slug]/admin/edit/[sermonId]/page.js" << 'EOF'
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { derivePalette } from "@/lib/theme";
@@ -20,4 +19,3 @@ export default async function EditMessagePage({ params }) {
 
   return <SermonForm palette={derivePalette(church)} churchId={church.id} slug={params.slug} seriesList={series || []} existingSermon={sermon} />;
 }
-EOF
