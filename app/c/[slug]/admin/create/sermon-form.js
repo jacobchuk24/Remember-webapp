@@ -15,6 +15,15 @@ const BLOCK_TYPES = [
   { type: "announcement", label: "Announcement", placeholder: "Vacation Bible School signups open…" },
 ];
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SermonForm({ palette, churchId, slug, seriesList: initialSeries }) {
   const router = useRouter();
   const [seriesList, setSeriesList] = useState(initialSeries);
@@ -28,6 +37,7 @@ export default function SermonForm({ palette, churchId, slug, seriesList: initia
   const [showNewSeries, setShowNewSeries] = useState(false);
   const [publishedFlash, setPublishedFlash] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingId, setUploadingId] = useState(null);
 
   const field = { width: "100%", boxSizing: "border-box", border: `1px solid ${palette.line}`, background: "#fff", borderRadius: 10, padding: "10px 12px", fontSize: 13.5, color: palette.charcoal, outline: "none" };
 
@@ -41,6 +51,17 @@ export default function SermonForm({ palette, churchId, slug, seriesList: initia
     const next = [...blocks];
     [next[idx], next[swap]] = [next[swap], next[idx]];
     setBlocks(next);
+  };
+
+  const handleImagePick = async (blockId, file) => {
+    if (!file) return;
+    setUploadingId(blockId);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      updateBlock(blockId, dataUrl);
+    } finally {
+      setUploadingId(null);
+    }
   };
 
   const confirmNewSeries = async () => {
@@ -111,7 +132,7 @@ export default function SermonForm({ palette, churchId, slug, seriesList: initia
           const meta = BLOCK_TYPES.find((t) => t.type === b.type);
           return (
             <div key={b.id} style={{ border: `1px solid ${palette.line}`, background: "#fff", borderRadius: 12, padding: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 11.5, fontWeight: 700, color: palette.forest, textTransform: "uppercase" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 11.5, fontWeight: 700, color: palette.forest, textTransform: "uppercase" }}>
                 <span>{meta.label}</span>
                 <span style={{ display: "flex", gap: 6 }}>
                   <button type="button" onClick={() => moveBlock(b.id, -1)} style={iconBtn(palette)}>↑</button>
@@ -119,7 +140,30 @@ export default function SermonForm({ palette, churchId, slug, seriesList: initia
                   <button type="button" onClick={() => removeBlock(b.id)} style={iconBtn(palette)}>✕</button>
                 </span>
               </div>
-              <textarea value={b.content} onChange={(e) => updateBlock(b.id, e.target.value)} placeholder={meta.placeholder} rows={2} style={{ ...field, resize: "none" }} />
+
+              {b.type === "image" ? (
+                <div>
+                  {b.content && (
+                    <img src={b.content} alt="" style={{ width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 8, marginBottom: 8, display: "block" }} />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImagePick(b.id, e.target.files?.[0])}
+                    style={{ fontSize: 12.5, color: palette.charcoalSoft, width: "100%" }}
+                  />
+                  {uploadingId === b.id && <div style={{ fontSize: 11.5, color: palette.charcoalSoft, marginTop: 4 }}>Loading image…</div>}
+                  <div style={{ fontSize: 11, color: palette.charcoalSoft, marginTop: 6 }}>Or paste an image URL instead:</div>
+                  <input
+                    value={b.content && !b.content.startsWith("data:") ? b.content : ""}
+                    onChange={(e) => updateBlock(b.id, e.target.value)}
+                    placeholder="https://…"
+                    style={{ ...field, marginTop: 4 }}
+                  />
+                </div>
+              ) : (
+                <textarea value={b.content} onChange={(e) => updateBlock(b.id, e.target.value)} placeholder={meta.placeholder} rows={2} style={{ ...field, resize: "none" }} />
+              )}
             </div>
           );
         })}
