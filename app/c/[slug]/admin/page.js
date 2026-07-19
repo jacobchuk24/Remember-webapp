@@ -1,13 +1,16 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { derivePalette } from "@/lib/theme";
 
 export default async function SundayHub({ params }) {
   const supabase = createClient();
-  const { data: church } = await supabase.from("churches").select("*").eq("slug", params.slug).maybeSingle();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from("profiles").select("church_id").eq("id", user.id).single();
+  const { data: church } = await supabase.from("churches").select("*").eq("id", profile.church_id).single();
   const { data: sermons } = await supabase
     .from("sermons")
     .select("id, title, speaker, date, status, series:series_id(name)")
-    .eq("church_id", church.id)
+    .eq("church_id", profile.church_id)
     .order("created_at", { ascending: false });
 
   const palette = derivePalette(church);
@@ -28,20 +31,4 @@ export default async function SundayHub({ params }) {
         </div>
       </div>
 
-      <a href={`/c/${params.slug}/admin/create`} style={{ display: "inline-block", textDecoration: "none", background: palette.forest, color: palette.onForest, borderRadius: 999, padding: "11px 20px", fontSize: 13.5, fontWeight: 600, marginBottom: 26 }}>
-        + Create Message
-      </a>
-
-      <div style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: palette.charcoalSoft, fontWeight: 600, marginBottom: 10 }}>All Messages</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {(sermons || []).map((s) => (
-          <div key={s.id} style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", border: `1px solid ${palette.line}`, background: "#fff", borderRadius: 12, fontSize: 13 }}>
-            <span style={{ fontWeight: 600, color: palette.charcoal }}>{s.title}</span>
-            <span style={{ color: palette.charcoalSoft }}>{s.series?.name} · {s.date} · {s.status}</span>
-          </div>
-        ))}
-        {(!sermons || sermons.length === 0) && <p style={{ fontSize: 13, color: palette.charcoalSoft, fontStyle: "italic" }}>No messages yet.</p>}
-      </div>
-    </div>
-  );
-}
+      
