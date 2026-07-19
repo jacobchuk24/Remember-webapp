@@ -11,15 +11,10 @@ function slugify(input) {
     .replace(/(^-|-$)/g, "");
 }
 
-export async function checkSlugAvailable(slug) {
-  const supabase = createClient();
-  const { data } = await supabase.from("churches").select("id").eq("slug", slug).maybeSingle();
-  return !data;
-}
-
-export async function createChurchSignup({ churchName, slug, email }) {
+export async function createChurchSignup({ churchName, slug, email, password }) {
   const cleanSlug = slugify(slug || churchName);
   if (!cleanSlug) throw new Error("Please enter a valid church name.");
+  if (!password || password.length < 6) throw new Error("Password must be at least 6 characters.");
 
   const admin = createAdminClient();
 
@@ -33,18 +28,17 @@ export async function createChurchSignup({ churchName, slug, email }) {
     .single();
   if (churchError) throw new Error(churchError.message);
 
-  // Queue the admin elevation; the auth callback consumes this once the
-  // email is verified via magic link (see app/auth/callback/route.js).
   await admin.from("pending_admin_signups").upsert({ email, church_id: church.id });
 
   const supabase = createClient();
-  const { error: otpError } = await supabase.auth.signInWithOtp({
+  const { error: signUpError } = await supabase.auth.signUp({
     email,
+    password,
     options: {
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/c/${cleanSlug}/admin`,
     },
   });
-  if (otpError) throw new Error(otpError.message);
+  if (signUpError) throw new Error(signUpError.message);
 
   return { slug: cleanSlug };
 }
