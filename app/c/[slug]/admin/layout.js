@@ -7,9 +7,10 @@ export default async function AdminLayout({ children, params }) {
   const { data: church } = await supabase.from("churches").select("*").eq("slug", params.slug).maybeSingle();
   if (!church) notFound();
   const palette = derivePalette(church);
-  const nav = [
+    const nav = [
     { href: `/c/${params.slug}/admin`, label: "Sunday Hub" },
     { href: `/c/${params.slug}/admin/create`, label: "Create Message" },
+    { href: `/c/${params.slug}/admin/prayers`, label: "Prayer Requests" },
     { href: `/c/${params.slug}/admin/settings`, label: "Settings" },
   ];
 
