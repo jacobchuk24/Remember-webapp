@@ -68,11 +68,17 @@ export default async function ChurchHomePage({ params }) {
             <p style={{ fontSize: 13, color: palette.charcoalSoft, margin: 0 }}>Nothing published yet — check back Sunday.</p>
           </div>
         )}
-
-        <Link href={`/c/${params.slug}/library`} style={{ display: "block", textAlign: "center", textDecoration: "none", border: `1px solid ${palette.line}`, borderRadius: 999, padding: "10px 0", fontSize: 13, fontWeight: 600, color: palette.charcoal }}>
-          Library
-        </Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href={`/c/${params.slug}/library`} style={{ flex: 1, display: "block", textAlign: "center", textDecoration: "none", border: `1px solid ${palette.line}`, borderRadius: 999, padding: "10px 0", fontSize: 13, fontWeight: 600, color: palette.charcoal }}>
+            Library
+          </Link>
+          <Link href={`/c/${params.slug}/prayer`} style={{ flex: 1, display: "block", textAlign: "center", textDecoration: "none", border: `1px solid ${palette.line}`, borderRadius: 999, padding: "10px 0", fontSize: 13, fontWeight: 600, color: palette.charcoal }}>
+            Prayer
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
+
+        
